@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meu Assistente de Autocuidado</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: white;
+        }
+
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        .time {
+            font-size: 18px;
+            opacity: 0.9;
+        }
+
+        .tasks-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .task-card {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 20px;
+            padding: 20px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            border: 2px solid transparent;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .task-card.urgent {
+            border-color: #ff4757;
+            background: rgba(255, 71, 87, 0.3);
+            animation: pulse 1.5s infinite;
+        }
+
+        .task-card.completed {
+            background: rgba(46, 213, 115, 0.3);
+            border-color: #2ed573;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .task-icon {
+            font-size: 40px;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .task-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .task-status {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+
+        .task-count {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            background: #ff4757;
+            color: white;
+            border-radius: 50%;
+            width: 25px;
+            height: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .progress-section {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .progress-title {
+            text-align: center;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+
+        .progress-bar {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            height: 20px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #2ed573, #7bed9f);
+            transition: width 0.5s ease;
+            border-radius: 10px;
+        }
+
+        .progress-text {
+            text-align: center;
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .reset-btn {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .reset-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #ff4757;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            font-weight: bold;
+            z-index: 1000;
+            animation: slideDown 0.5s ease;
+        }
+
+        @keyframes slideDown {
+            from { transform: translateX(-50%) translateY(-100%); }
+            to { transform: translateX(-50%) translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌟 Meu Dia de Autocuidado</h1>
+            <div class="time" id="currentTime"></div>
+        </div>
+
+        <div class="tasks-grid">
+            <div class="task-card" id="water" onclick="completeTask('water')">
+                <span class="task-icon">💧</span>
+                <div class="task-title">Água</div>
+                <div class="task-status" id="water-status">0/8 copos</div>
+                <div class="task-count" id="water-count">8</div>
+            </div>
+
+            <div class="task-card" id="food" onclick="completeTask('food')">
+                <span class="task-icon">🍽️</span>
+                <div class="task-title">Comida</div>
+                <div class="task-status" id="food-status">0/3 refeições</div>
+                <div class="task-count" id="food-count">3</div>
+            </div>
+
+            <div class="task-card" id="bathroom" onclick="completeTask('bathroom')">
+                <span class="task-icon">🚽</span>
+                <div class="task-title">Banheiro</div>
+                <div class="task-status" id="bathroom-status">Última vez: --</div>
+            </div>
+
+            <div class="task-card" id="bromazepam" onclick="completeTask('bromazepam')">
+                <span class="task-icon">💊</span>
+                <div class="task-title">Bromazepam</div>
+                <div class="task-status" id="bromazepam-status">6h - Pendente</div>
+                <div class="task-count" id="bromazepam-count">!</div>
+            </div>
+
+            <div class="task-card" id="atomoxetina" onclick="completeTask('atomoxetina')">
+                <span class="task-icon">💊</span>
+                <div class="task-title">Atomoxetina</div>
+                <div class="task-status" id="atomoxetina-status">11:30h - Pendente</div>
+                <div class="task-count" id="atomoxetina-count">!</div>
+            </div>
+        </div>
+
+        <div class="progress-section">
+            <div class="progress-title">Progresso do Dia</div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div class="progress-text" id="progressText">0% concluído</div>
+        </div>
+
+        <button class="reset-btn" onclick="resetDay()">🔄 Começar Novo Dia</button>
+    </div>
+
+    <script>
+        let tasks = {
+            water: { completed: 0, target: 17, lastTime: null }, // 6h às 22h = 17 lembretes
+            food: { completed: 0, target: 6, lastTime: null }, // A cada 3h das 6h às 21h = 6 refeições
+            bathroom: { completed: 0, target: 9, lastTime: null }, // A cada 2h das 6h às 22h = 9 idas
+            bromazepam: { completed: false, lastTime: null },
+            atomoxetina: { completed: false, lastTime: null }
+        };
+
+        // Solicitar permissão para notificações ao carregar a página
+        function requestNotificationPermission() {
+            if ('Notification' in window && Notification.permission !== 'granted') {
+                Notification.requestPermission().then(permission => {
+                    if (permission === 'granted') {
+                        showNotification('🔔 Notificações ativadas! Agora vou te lembrar das tarefas importantes.');
+                        new Notification('Assistente de Autocuidado', {
+                            body: 'Notificações configuradas com sucesso! 🎉',
+                            icon: '💊',
+                            vibrate: [200, 100, 200]
+                        });
+                    }
+                });
+            }
+        }
+
+        function sendBrowserNotification(title, body, vibration = [200, 100, 200]) {
+            if ('Notification' in window && Notification.permission === 'granted') {
+                new Notification(title, {
+                    body: body,
+                    icon: '🔔',
+                    vibrate: vibration,
+                    requireInteraction: true // Mantém a notificação até o usuário interagir
+                });
+            }
+        }
+
+        function updateTime() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('pt-BR', { 
+                hour: '2-digit', 
+                minute: '2-digit' 
+            });
+            document.getElementById('currentTime').textContent = timeString;
+        }
+
+        function completeTask(taskType) {
+            const now = new Date();
+            
+            if (taskType === 'water') {
+                if (tasks.water.completed < tasks.water.target) {
+                    tasks.water.completed++;
+                    tasks.water.lastTime = now;
+                    playSuccessSound();
+                    showNotification('💧 Ótimo! Mais um copo de água!');
+                }
+            } else if (taskType === 'food') {
+                if (tasks.food.completed < tasks.food.target) {
+                    tasks.food.completed++;
+                    tasks.food.lastTime = now;
+                    playSuccessSound();
+                    showNotification('🍽️ Que bom que você comeu!');
+                }
+            } else if (taskType === 'bathroom') {
+                if (tasks.bathroom.completed < tasks.bathroom.target) {
+                    tasks.bathroom.completed++;
+                    tasks.bathroom.lastTime = now;
+                    playSuccessSound();
+                    showNotification('🚽 Cuidou de si! Parabéns!');
+                }
+            } else if (taskType === 'bromazepam') {
+                tasks.bromazepam.completed = true;
+                tasks.bromazepam.lastTime = now;
+                playSuccessSound();
+                showNotification('💊 Bromazepam tomado! Muito bem!');
+            } else if (taskType === 'atomoxetina') {
+                tasks.atomoxetina.completed = true;
+                tasks.atomoxetina.lastTime = now;
+                playSuccessSound();
+                showNotification('💊 Atomoxetina tomada! Muito bem!');
+            }
+            
+            updateDisplay();
+        }
+
+        function updateDisplay() {
+            // Água
+            const waterCard = document.getElementById('water');
+            const waterStatus = document.getElementById('water-status');
+            const waterCount = document.getElementById('water-count');
+            
+            waterStatus.textContent = `${tasks.water.completed}/${tasks.water.target} copos`;
+            waterCount.textContent = tasks.water.target - tasks.water.completed;
+            
+            if (tasks.water.completed >= tasks.water.target) {
+                waterCard.classList.add('completed');
+                waterCard.classList.remove('urgent');
+                waterCount.style.display = 'none';
+            } else if (shouldBeUrgent('water')) {
+                waterCard.classList.add('urgent');
+                waterCard.classList.remove('completed');
+                waterCount.style.display = 'flex';
+            } else {
+                waterCard.classList.remove('urgent', 'completed');
+                waterCount.style.display = 'flex';
+            }
+
+            // Comida
+            const foodCard = document.getElementById('food');
+            const foodStatus = document.getElementById('food-status');
+            const foodCount = document.getElementById('food-count');
+            
+            foodStatus.textContent = `${tasks.food.completed}/${tasks.food.target} refeições`;
+            foodCount.textContent = tasks.food.target - tasks.food.completed;
+            
+            if (tasks.food.completed >= tasks.food.target) {
+                foodCard.classList.add('completed');
+                foodCard.classList.remove('urgent');
+                foodCount.style.display = 'none';
+            } else if (shouldBeUrgent('food')) {
+                foodCard.classList.add('urgent');
+                foodCard.classList.remove('completed');
+                foodCount.style.display = 'flex';
+            } else {
+                foodCard.classList.remove('urgent', 'completed');
+                foodCount.style.display = 'flex';
+            }
+
+            // Banheiro
+            const bathroomCard = document.getElementById('bathroom');
+            const bathroomStatus = document.getElementById('bathroom-status');
+            
+            bathroomStatus.textContent = `${tasks.bathroom.completed}/${tasks.bathroom.target} idas hoje`;
+            
+            if (tasks.bathroom.completed >= tasks.bathroom.target) {
+                bathroomCard.classList.add('completed');
+                bathroomCard.classList.remove('urgent');
+            } else if (shouldBeUrgent('bathroom')) {
+                bathroomCard.classList.add('urgent');
+                bathroomCard.classList.remove('completed');
+            } else {
+                bathroomCard.classList.remove('urgent', 'completed');
+            }
+
+            // Bromazepam
+            const bromazepamCard = document.getElementById('bromazepam');
+            const bromazepamStatus = document.getElementById('bromazepam-status');
+            const bromazepamCount = document.getElementById('bromazepam-count');
+            
+            if (tasks.bromazepam.completed) {
+                bromazepamStatus.textContent = '6h - Tomado! ✅';
+                bromazepamCard.classList.add('completed');
+                bromazepamCard.classList.remove('urgent');
+                bromazepamCount.style.display = 'none';
+            } else {
+                bromazepamStatus.textContent = '6h - Pendente';
+                if (shouldBeUrgent('bromazepam')) {
+                    bromazepamCard.classList.add('urgent');
+                } else {
+                    bromazepamCard.classList.remove('urgent');
+                }
+                bromazepamCard.classList.remove('completed');
+                bromazepamCount.style.display = 'flex';
+            }
+
+            // Atomoxetina
+            const atomoxetinaCard = document.getElementById('atomoxetina');
+            const atomoxetinaStatus = document.getElementById('atomoxetina-status');
+            const atomoxetinaCount = document.getElementById('atomoxetina-count');
+            
+            if (tasks.atomoxetina.completed) {
+                atomoxetinaStatus.textContent = '11:30h - Tomada! ✅';
+                atomoxetinaCard.classList.add('completed');
+                atomoxetinaCard.classList.remove('urgent');
+                atomoxetinaCount.style.display = 'none';
+            } else {
+                atomoxetinaStatus.textContent = '11:30h - Pendente';
+                if (shouldBeUrgent('atomoxetina')) {
+                    atomoxetinaCard.classList.add('urgent');
+                } else {
+                    atomoxetinaCard.classList.remove('urgent');
+                }
+                atomoxetinaCard.classList.remove('completed');
+                atomoxetinaCount.style.display = 'flex';
+            }
+
+            updateProgress();
+        }
+
+        function shouldBeUrgent(taskType) {
+            const now = new Date();
+            const hour = now.getHours();
+            const minute = now.getMinutes();
+            
+            switch(taskType) {
+                case 'water':
+                    // Urgente se passou da hora do próximo lembrete
+                    const nextWaterHour = Math.ceil((hour - 6) / 1) * 1 + 6;
+                    return hour >= 6 && hour <= 22 && (hour > nextWaterHour || (hour === nextWaterHour && minute > 0));
+                case 'food':
+                    // Urgente se passou da hora da próxima refeição (6h, 9h, 12h, 15h, 18h, 21h)
+                    const foodHours = [6, 9, 12, 15, 18, 21];
+                    const passedMeals = foodHours.filter(h => hour > h || (hour === h && minute > 0)).length;
+                    return tasks.food.completed < passedMeals;
+                case 'bathroom':
+                    // Urgente se passou da hora do próximo lembrete (a cada 2h)
+                    const nextBathroomHour = Math.ceil((hour - 6) / 2) * 2 + 6;
+                    return hour >= 6 && hour <= 22 && (hour > nextBathroomHour || (hour === nextBathroomHour && minute > 0));
+                case 'bromazepam':
+                    return hour >= 6 && !tasks.bromazepam.completed;
+                case 'atomoxetina':
+                    return (hour > 11 || (hour === 11 && minute >= 30)) && !tasks.atomoxetina.completed;
+                default:
+                    return false;
+            }
+        }
+
+        function getTimeSinceString(time) {
+            const now = new Date();
+            const diff = now - time;
+            const hours = Math.floor(diff / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            
+            if (hours > 0) {
+                return `${hours}h ${minutes}min atrás`;
+            } else {
+                return `${minutes}min atrás`;
+            }
+        }
+
+        function updateProgress() {
+            let completed = 0;
+            let total = 5;
+            
+            if (tasks.water.completed >= tasks.water.target) completed++;
+            if (tasks.food.completed >= tasks.food.target) completed++;
+            if (tasks.bathroom.completed >= tasks.bathroom.target) completed++;
+            if (tasks.bromazepam.completed) completed++;
+            if (tasks.atomoxetina.completed) completed++;
+            
+            const percentage = (completed / total) * 100;
+            
+            document.getElementById('progressFill').style.width = percentage + '%';
+            document.getElementById('progressText').textContent = `${Math.round(percentage)}% concluído - ${completed}/${total} tarefas`;
+            
+            if (percentage === 100) {
+                showNotification('🎉 Parabéns! Você completou todas as tarefas de hoje!');
+                sendBrowserNotification('🎉 Parabéns!', 'Você completou todas as tarefas de autocuidado hoje!', [300, 200, 300, 200, 300]);
+            }
+        }
+
+        function playSuccessSound() {
+            // Cria um som simples usando Web Audio API
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+            oscillator.frequency.setValueAtTime(1000, audioContext.currentTime + 0.1);
+            
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.2);
+        }
+
+        function showNotification(message) {
+            const notification = document.createElement('div');
+            notification.className = 'notification';
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                document.body.removeChild(notification);
+            }, 3000);
+        }
+
+        function resetDay() {
+            if (confirm('Tem certeza que quer começar um novo dia? Isso vai apagar todo o progresso atual.')) {
+                tasks = {
+                    water: { completed: 0, target: 17, lastTime: null },
+                    food: { completed: 0, target: 6, lastTime: null },
+                    bathroom: { completed: 0, target: 9, lastTime: null },
+                    bromazepam: { completed: false, lastTime: null },
+                    atomoxetina: { completed: false, lastTime: null }
+                };
+                updateDisplay();
+                showNotification('🌅 Novo dia começou! Você consegue!');
+            }
+        }
+
+        // Verificação automática a cada minuto
+        setInterval(() => {
+            updateTime();
+            updateDisplay();
+            
+            const now = new Date();
+            const hour = now.getHours();
+            const minute = now.getMinutes();
+            
+            // Só funciona das 6h às 22h
+            if (hour < 6 || hour > 22) return;
+            
+            // Verificar se é exatamente a hora dos lembretes
+            if (minute === 0) {
+                // Bromazepam às 6h
+                if (hour === 6 && !tasks.bromazepam.completed) {
+                    showNotification('💊 Hora do Bromazepam!');
+                    sendBrowserNotification('💊 Bromazepam', 'Está na hora do seu Bromazepam!', [500, 300, 500]);
+                }
+                
+                // Água a cada 1h (das 6h às 22h)
+                if (hour >= 6 && hour <= 22) {
+                    showNotification('💧 Hora de beber água!');
+                    sendBrowserNotification('💧 Água', 'Lembrete: beba um copo de água!', [200, 100, 200]);
+                }
+                
+                // Banheiro a cada 2h (6h, 8h, 10h, 12h, 14h, 16h, 18h, 20h, 22h)
+                if (hour % 2 === 0) {
+                    showNotification('🚽 Hora de ir ao banheiro!');
+                    sendBrowserNotification('🚽 Banheiro', 'Lembrete: que tal ir ao banheiro?', [300, 200, 300]);
+                }
+                
+                // Comida a cada 3h (6h, 9h, 12h, 15h, 18h, 21h)
+                if ([6, 9, 12, 15, 18, 21].includes(hour)) {
+                    showNotification('🍽️ Hora de comer!');
+                    sendBrowserNotification('🍽️ Comida', 'Lembrete: está na hora de se alimentar!', [400, 200, 400]);
+                }
+            }
+            
+            // Atomoxetina às 11:30h
+            if (hour === 11 && minute === 30 && !tasks.atomoxetina.completed) {
+                showNotification('💊 Hora da Atomoxetina!');
+                sendBrowserNotification('💊 Atomoxetina', 'Está na hora da sua Atomoxetina!', [500, 300, 500]);
+            }
+            
+        }, 60000);
+
+        // Inicialização
+        updateTime();
+        updateDisplay();
+        requestNotificationPermission();
+        showNotification('👋 Olá! Vamos cuidar bem de você hoje!');
+    </script>
+</body>
+</html>
