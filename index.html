@@ -1,4 +1,13 @@
 <!DOCTYPE html>
+<script>
+  function verificarSenha() {
+    var senha = prompt("Digite a senha para acessar o site:");
+    if (senha !== "2e1e") {
+      alert("Senha incorreta!");
+      window.location.href = "https://www.google.com";
+    }
+  }
+</script>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
@@ -11,7 +20,17 @@
             box-sizing: border-box;
         }
 
-        body {
+        <body onload="verificarSenha()">
+<script>
+  function verificarSenha() {
+    var senha = prompt("Digite a senha para acessar o site:");
+    if (senha !== "2e1e") {
+      alert("Senha incorreta!");
+      window.location.href = "https://www.google.com"; // Ou qualquer outro site
+    }
+    // Se a senha estiver correta, o usuário permanece no site
+  }
+</script>
             font-family: 'Arial', sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
